@@ -1,0 +1,151 @@
+---
+title: "Co-BSM 수학1 및 영어1 분석 보고서"
+author: "최재원"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+library(viridis)
+library(ggridges)
+library(tidyr)
+library(shinyWidgets)
+
+#master = read.csv("co_bsm.csv",fileEncoding ="euc-kr")
+master = read.csv("co_bsm_demographic.csv",fileEncoding ="euc-kr") #첫학기 GPA있는 데이터
+
+#영어1, 수학1 성적(성적학기 학년 포함)
+all.grade = read.csv("grade.csv",fileEncoding ="euc-kr")
+
+# 고학번이 2012년 이후에 재수강한 기록 제외
+all.grade = filter(all.grade,학번 > 201200000)
+
+```
+
+## 수학1과 영어1 재수강 분석{.tabset}
+
+### 수학1 첫성적과 재수강 성적 관계 {.active}
+
+```{r math-re-taker analysis,echo=FALSE,message = FALSE,results = "asis"}
+# 재수강자만 필터링
+re_take = filter(all.grade,재수강여부=="R") #재수강 기록은 삭제
+re_take_id = re_take %>% select(학번) 
+re_take_id = unique(re_take$학번)
+# 재수강자만 전체 성적 데이터에서 골라냄, all.grade는 이미 재수강 데이터는 제외되어 있음
+# 따라서 재수강자의 첫 과목 성적 데이터만 추출됨
+re_take_id_first = all.grade[all.grade$학번 %in% re_take_id, ] # Applying %in%-operator
+
+# 위의 데이터와 재수강 데이터를 합침, 그러면 재수강자의 첫 수강 과목도 포함된
+re_take_all = rbind(re_take,re_take_id_first)
+
+# 재수강_수학, 첫번째 성적만 추출
+re_take_all = arrange(re_take_all,학번,년도,학기)
+
+# 수학 첫과목 및 재수강 성적
+df_first_second = re_take_all %>% filter(과목명=="수학1")%>%
+  group_by(학번) %>% slice(1:2)
+
+df_wide <- df_first_second %>% select(학번,성적등급구분) %>%
+  group_by(학번) %>% 
+  mutate(grade_num = paste0("grade_", row_number())) %>% 
+  pivot_wider(names_from = grade_num, values_from = 성적등급구분)
+
+# Rename columns
+names(df_wide)[2:3] <- c("first_grade", "second_grade")
+
+# Remove grade_num column
+df_wide$grade_num <- NULL
+
+# Print the resulting table
+# df_wide
+
+# create a cross tablee
+df <- as.data.frame(table(df_wide$first_grade, df_wide$second_grade))
+df = mutate(df, ratio=Freq/sum(Freq)) # 비율 변수 생성
+
+# create the heatmap with borders
+ggplot(df, aes(x = Var2, y = Var1, fill = Freq)) +
+  geom_tile(colour = "black") +
+  scale_fill_gradient(low = "white", high = "#ff0000") +
+  theme_minimal() +
+  theme( plot.title = element_text(size = 16, color = "grey20", face = "bold",vjust = 3),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(hjust = 1, vjust = 0.5),
+        legend.position = "none") +
+  labs(title = "첫수강 수학 성적과 재수강 성적 관계", 
+       x = "재수강 성적", y = "첫번째 성적", fill = "학생수")+
+  geom_text(aes(label = paste0(round(ratio * 100, 1), "%")),
+            size = 3.5, colour = "black")
+
+```
+
+### 영어1 첫성적과 재수강 성적 관계 
+
+```{r eng-re-taker analysis,echo=FALSE,message = FALSE,results = "asis"}
+# 재수강자만 필터링
+re_take = filter(all.grade,재수강여부=="R") #재수강 기록은 삭제
+re_take_id = re_take %>% select(학번) 
+re_take_id = unique(re_take$학번)
+# 재수강자만 전체 성적 데이터에서 골라냄, all.grade는 이미 재수강 데이터는 제외되어 있음
+# 따라서 재수강자의 첫 과목 성적 데이터만 추출됨
+re_take_id_first = all.grade[all.grade$학번 %in% re_take_id, ] # Applying %in%-operator
+
+# 위의 데이터와 재수강 데이터를 합침, 그러면 재수강자의 첫 수강 과목도 포함된
+re_take_all = rbind(re_take,re_take_id_first)
+
+# 재수강_수학, 첫번째 성적만 추출
+re_take_all = arrange(re_take_all,학번,년도,학기)
+
+# 수학 첫과목 및 재수강 성적
+df_first_second = re_take_all %>% filter(과목명=="영어1")%>%
+  group_by(학번) %>% slice(1:2)
+
+df_wide <- df_first_second %>% select(학번,성적등급구분) %>%
+  group_by(학번) %>% 
+  mutate(grade_num = paste0("grade_", row_number())) %>% 
+  pivot_wider(names_from = grade_num, values_from = 성적등급구분)
+
+# Rename columns
+names(df_wide)[2:3] <- c("first_grade", "second_grade")
+
+# Remove grade_num column
+df_wide$grade_num <- NULL
+
+# Print the resulting table
+# df_wide
+
+# create a cross tablee
+df <- as.data.frame(table(df_wide$first_grade, df_wide$second_grade))
+df = mutate(df, ratio=Freq/sum(Freq)) # 비율 변수 생성
+
+# create the heatmap with borders
+ggplot(df, aes(x = Var2, y = Var1, fill = Freq)) +
+  geom_tile(colour = "black") +
+  scale_fill_gradient(low = "white", high = "#2596be") +
+  theme_minimal() +
+  theme( plot.title = element_text(size = 16, color = "grey20", face = "bold",vjust = 3),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(hjust = 1, vjust = 0.5),
+        legend.position = "none") +
+  labs(title = "첫수강 영어 성적과 재수강 성적 관계", 
+       x = "재수강 성적", y = "첫번째 성적", fill = "학생수")+
+  geom_text(aes(label = paste0(round(ratio * 100, 1), "%")),
+            size = 3.5, colour = "black")
+
+```
+## {-}
+```{r}
+
+```
