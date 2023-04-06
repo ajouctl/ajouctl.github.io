@@ -1,8 +1,14 @@
 ---
 title: "Co-BSM 수학1 및 영어1 분석 보고서"
-author: "최재원"
-date: "`r Sys.Date()`"
-output: html_document
+#author: "최재원"
+#date: "`r Sys.Date()`"
+output: 
+ html_document:
+   css: "style.css"
+   toc: true
+   toc_depth: 3 # ###(3개 까지)
+   toc_float: true
+   number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -26,10 +32,10 @@ all.grade = filter(all.grade,학번 > 201200000)
 
 ```
 
-## 수학1과 영어1 재수강 분석{.tabset}
+### 수학1과 영어1 재수강 분석{.tabset}
 
-### 수학1 첫성적과 재수강 성적 관계 {.active}
-
+#### 수학1 첫성적과 재수강 성적 관계 {.active}
+<br>
 ```{r math-re-taker analysis,echo=FALSE,message = FALSE,results = "asis"}
 # 재수강자만 필터링
 re_take = filter(all.grade,재수강여부=="R") #재수강 기록은 삭제
@@ -87,8 +93,8 @@ ggplot(df, aes(x = Var2, y = Var1, fill = Freq)) +
 
 ```
 
-### 영어1 첫성적과 재수강 성적 관계 
-
+#### 영어1 첫성적과 재수강 성적 관계 
+<br>
 ```{r eng-re-taker analysis,echo=FALSE,message = FALSE,results = "asis"}
 # 재수강자만 필터링
 re_take = filter(all.grade,재수강여부=="R") #재수강 기록은 삭제
